@@ -2,7 +2,7 @@ node_modules/
 .env
 *.log
 npm-debug.log*
-.DS_Store        ← Mac
-Thumbs.db        ← Windows
+.DS_Store        
+Thumbs.db        
 .vscode/
 .idea/

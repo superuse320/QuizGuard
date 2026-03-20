@@ -1,0 +1,18 @@
+{
+    "ignore": [
+      "swagger-output.json",
+      "database/",
+      "node_modules/"
+    ],
+    "ext": "js,json",
+    "watch": [
+      "*.js",
+      "config/",
+      "routes/",
+      "controllers/",
+      "models/",
+      "middlewares/",
+      "services/",
+      "utils/"
+    ]
+  }
