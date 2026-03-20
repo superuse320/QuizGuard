@@ -62,10 +62,6 @@ SUPABASE_SERVICE_KEY=eyJ...   # service_role key (nunca la anon key)
 GEMINI_API_KEY=AIza...
 ```
 
-> ⚠️ Nunca subas el `.env` a GitHub. Está en el `.gitignore`.
-
----
-
 ## Scripts
 
 ```bash
@@ -188,16 +184,6 @@ Para autenticarte en Swagger:
 2. Clic en **Authorize** en Swagger
 3. Escribe `Bearer tu_access_token`
 
----
-
-## Despliegue en cPanel
-
-```
-1. Sube el proyecto vía File Manager o Git
-2. cPanel → Setup Node.js App → apunta a index.js
-3. Environment Variables → agrega SUPABASE_URL, SUPABASE_SERVICE_KEY, GEMINI_API_KEY
-4. npm install desde el panel o SSH
-5. Inicia la app
 ```
 
 El archivo `.htaccess` ya está configurado para redirigir al puerto de Node.js.
