@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  app:
+    # Construye la imagen usando el Dockerfile de la carpeta actual
+    build: .
+    # Nombre del contenedor para que sea fácil identificarlo
+    container_name: quizguard_app
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    # Cargamos el archivo .env automáticamente si existe
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+    # Usamos el script "dev" que definiste en tu package.json
+    command: npm run dev

@@ -11,12 +11,8 @@ app.use(cors())
 app.use(express.json())
 
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
-
-const authRoutes   = require('./routes/auth.routes')
-const profileRoutes = require('./routes/profile.routes')
-
-app.use('/api/auth',     authRoutes)
-app.use('/api/profiles', profileRoutes)
+const profileRoutes = require('./routes/api.routes')
+app.use('/api/', profileRoutes)
 
 app.get('/', (req, res) => {
   res.json({ mensaje: 'API QuizGuard funcionando' })
