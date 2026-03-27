@@ -1,28 +1,11 @@
 const Groq = require("groq-sdk");
-const quizTemplate = require("../utils/template/quizStructure");
+const { QUIZ_GENERATOR_PROMPT, QUIZ_EVALUATOR_PROMPT,QUIZ_REGENERATOR_PROMPT } = require("./quiz.agents");
 const groq = new Groq();
-
-const QUIZ_AGENT_PROMPT = {
-  role: "system",
-  content: `Eres un experto en pedagogía y diseño de interfaces de formularios.
-  
-  Tu misión es generar cuestionarios técnicos en formato JSON.
-  DEBES seguir esta estructura EXACTA para el objeto de respuesta:
-  ${JSON.stringify(quizTemplate, null, 2)}
-
-  DIRECTRICES CRÍTICAS:
-  1. No inventes campos nuevos. Usa solo los que aparecen en la plantilla.
-  2. El campo 'type' define cómo se verá la pregunta. Usa 'choice' o 'checks' para preguntas con respuestas correctas.
-  3. Asegúrate de que 'title' y 'options' usen terminología técnica correcta según el tema indicado.
-  4. Genera un total de 10 preguntas.
-  5. Responde ÚNICAMENTE el JSON, sin texto explicativo.`
-};
-
 const generateQuiz = async (topic) => {
   try {
     const completion = await groq.chat.completions.create({
       messages: [
-        QUIZ_AGENT_PROMPT,
+        QUIZ_GENERATOR_PROMPT,
         { role: "user", content: `Genera un cuestionario avanzado sobre: ${topic}` }
       ],
       model: "llama-3.3-70b-versatile",
@@ -32,9 +15,57 @@ const generateQuiz = async (topic) => {
 
     return JSON.parse(completion.choices[0].message.content);
   } catch (error) {
-    console.error("Error en Groq Service:", error);
+    console.error("Error al generar quiz:", error);
     throw error;
   }
 };
+const evaluateQuiz = async (resultsData) => {
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        QUIZ_EVALUATOR_PROMPT,
+        { 
+          role: "user", 
+          content: `Analiza estos resultados: ${JSON.stringify(resultsData)}` 
+        }
+      ],
+      model: "llama-3.3-70b-versatile",
+      response_format: { type: "json_object" },
+      temperature: 0.3
+    });
 
-module.exports = { generateQuiz };
+    return JSON.parse(completion.choices[0].message.content);
+  } catch (error) {
+    console.error("Error al evaluar quiz:", error);
+    throw error;
+  }
+};
+const regenerateQuestion = async ({ currentQuiz, questionIndex, instruction }) => {
+  const preguntaActual = currentQuiz.questions[questionIndex];
+
+  const completion = await groq.chat.completions.create({
+    messages: [
+      QUIZ_REGENERATOR_PROMPT,
+      {
+        role: "user",
+        content: `Cuestionario actual: ${JSON.stringify(currentQuiz, null, 2)}
+
+Pregunta a reemplazar (índice ${questionIndex}):
+${JSON.stringify(preguntaActual, null, 2)}
+
+Instrucción del usuario: "${instruction}"
+
+Devuelve SOLO el JSON de la nueva pregunta con la misma estructura.`
+      }
+    ],
+    model: "llama-3.3-70b-versatile",
+    response_format: { type: "json_object" },
+    temperature: 0.7
+  });
+
+  return JSON.parse(completion.choices[0].message.content);
+};
+
+
+
+module.exports = { generateQuiz, evaluateQuiz,regenerateQuestion  };
