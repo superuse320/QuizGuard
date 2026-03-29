@@ -164,56 +164,110 @@ router.post('/quiz/evaluate',auth, asyncHandler(quizCtrl.submitQuizForEvaluation
  *           schema:
  *             type: object
  *             required:
- *               - currentQuiz
+ *               - version
+ *               - title
+ *               - questions
  *               - questionIndex
  *             properties:
- *               currentQuiz:
- *                 type: object
- *                 required:
- *                   - tema
- *                   - questions
- *                 properties:
- *                   tema:
- *                     type: string
- *                     example: "Arquitectura de Microservicios y Node.js"
- *                   questions:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         title:
- *                           type: string
- *                         type:
- *                           type: string
- *                           enum: [short, long, choice, checks, scale, date, grid_single]
- *                         options:
- *                           type: array
- *                           items:
- *                             type: string
- *                         correctAnswers:
- *                           type: array
+ *               version:
+ *                 type: string
+ *                 example: "1.0"
+ *               title:
+ *                 type: string
+ *                 example: "Arquitectura de Microservicios y Node.js"
+ *               description:
+ *                 type: string
+ *                 example: "Evaluación sobre conceptos de microservicios"
+ *               questions:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - title
+ *                     - type
+ *                     - required
+ *                   properties:
+ *                     title:
+ *                       type: string
+ *                     description:
+ *                       type: string
+ *                     type:
+ *                       type: string
+ *                       enum: [short, long, choice, checks, scale, date, grid_single]
+ *                     required:
+ *                       type: boolean
+ *                     options:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: Para tipos choice y checks
+ *                     correctAnswers:
+ *                       type: array
+ *                       description: Para tipos choice y checks
+ *                     scaleMin:
+ *                       type: integer
+ *                       description: Para tipo scale
+ *                     scaleMax:
+ *                       type: integer
+ *                       description: Para tipo scale
+ *                     scaleMinLabel:
+ *                       type: string
+ *                       description: Etiqueta del extremo mínimo (scale)
+ *                     scaleMaxLabel:
+ *                       type: string
+ *                       description: Etiqueta del extremo máximo (scale)
+ *                     rows:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: Para tipo grid_single
+ *                     columns:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: Para tipo grid_single
  *               questionIndex:
  *                 type: integer
  *                 example: 1
  *               instruction:
  *                 type: string
- *                 description: Instrucción opcional para guiar la regeneración (tema, tipo, enfoque)
+ *                 description: Instrucción opcional para guiar la regeneración
  *                 example: "Cambia la pregunta a tipo checks sobre el uso práctico de microservicios"
  *             example:
- *               currentQuiz:
- *                 tema: "Arquitectura de Microservicios y Node.js"
- *                 questions:
- *                   - title: "¿Qué es el desacoplamiento en microservicios?"
- *                     type: "short"
- *                     correctAnswers: ["Desacoplamiento", "Separación de intereses"]
- *                   - title: "¿Cuál es el protocolo más usado entre microservicios?"
- *                     type: "choice"
- *                     options: ["REST/HTTP", "GraphQL", "SOAP", "FTP"]
- *                     correctAnswers: ["REST/HTTP"]
- *                   - title: "¿Cuáles son ventajas de los microservicios?"
- *                     type: "checks"
- *                     options: ["Escalabilidad independiente", "Despliegue continuo", "Tolerancia a fallos", "Mayor acoplamiento"]
- *                     correctAnswers: ["Escalabilidad independiente", "Despliegue continuo", "Tolerancia a fallos"]
+ *               version: "1.0"
+ *               title: "Arquitectura de Microservicios y Node.js"
+ *               description: "Evaluación sobre conceptos de microservicios"
+ *               questions:
+ *                 - title: "¿Qué es el desacoplamiento en microservicios?"
+ *                   description: ""
+ *                   type: "short"
+ *                   required: true
+ *                 - title: "¿Cuál es el protocolo más usado entre microservicios?"
+ *                   description: ""
+ *                   type: "choice"
+ *                   required: true
+ *                   options: ["REST/HTTP", "GraphQL", "SOAP", "FTP"]
+ *                   correctAnswers: ["REST/HTTP"]
+ *                 - title: "¿Cuáles son ventajas de los microservicios?"
+ *                   description: ""
+ *                   type: "checks"
+ *                   required: false
+ *                   options: ["Escalabilidad independiente", "Despliegue continuo", "Tolerancia a fallos", "Mayor acoplamiento"]
+ *                   correctAnswers: ["Escalabilidad independiente", "Despliegue continuo", "Tolerancia a fallos"]
+ *                 - title: "Del 1 al 10, ¿qué tan complejo es implementar un API Gateway?"
+ *                   description: ""
+ *                   type: "scale"
+ *                   required: true
+ *                   scaleMin: 1
+ *                   scaleMax: 10
+ *                   scaleMinLabel: "Fácil"
+ *                   scaleMaxLabel: "Muy complejo"
+ *                 - title: "Relaciona cada herramienta con su categoría"
+ *                   description: ""
+ *                   type: "grid_single"
+ *                   required: false
+ *                   rows: ["Docker", "RabbitMQ"]
+ *                   columns: ["Contenedores", "Message Broker", "Orquestación"]
  *               questionIndex: 1
  *               instruction: "Cambia la pregunta a tipo checks sobre el uso práctico de microservicios"
  *     responses:
@@ -224,5 +278,5 @@ router.post('/quiz/evaluate',auth, asyncHandler(quizCtrl.submitQuizForEvaluation
  *       401:
  *         description: No autorizado
  */
-router.post('/quiz/regenerate-question', auth,asyncHandler(quizCtrl.regenerateQuestion));
+router.post('/quiz/regenerate-question',auth, asyncHandler(quizCtrl.regenerateQuestion));
 module.exports = router

@@ -1,5 +1,4 @@
 const { cerebras } = require('../../../config/iaConfig');
-
 const callCerebras = async (payload) => {
   console.log(" [Cerebras] Iniciando petición...");
   try {
@@ -16,7 +15,6 @@ const callCerebras = async (payload) => {
     } else {
       throw new Error("Estructura de respuesta inesperada de Cerebras");
     }
-
   } catch (error) {
     console.error(`[Cerebras] Error: ${error.message}`);
     throw error; 

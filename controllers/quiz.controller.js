@@ -25,23 +25,23 @@ const submitQuizForEvaluation = asyncHandler(async (req, res) => {
     return ApiResponseService.success(res, "Evaluación completada exitosamente", feedbackData); 
 });
 const regenerateQuestion = asyncHandler(async (req, res) => {
-    const { currentQuiz, questionIndex } = req.body;
+    const { questionIndex, instruction, ...quizData } = req.body;
 
     const index = questionIndex - 1;
 
-    if (!currentQuiz || questionIndex === undefined || !Array.isArray(currentQuiz.questions)) {
+    if (!quizData.questions || questionIndex === undefined || !Array.isArray(quizData.questions)) {
         return ApiResponseService.error(res, "Datos incompletos para regenerar la pregunta.", 400);
     }
 
-    if (index < 0 || index >= currentQuiz.questions.length) {
+    if (index < 0 || index >= quizData.questions.length) {
         return ApiResponseService.error(res, "Índice de pregunta fuera de rango.", 400);
     }
 
-    const newQuestion = await quizService.regenerateQuestion({ currentQuiz, questionIndex: index });
+    const newQuestion = await quizService.regenerateQuestion({ currentQuiz: quizData, questionIndex: index, instruction });
 
     const updatedQuiz = {
-        ...currentQuiz,
-        questions: currentQuiz.questions.map((q, i) => i === index ? newQuestion : q)
+        ...quizData,
+        questions: quizData.questions.map((q, i) => i === index ? newQuestion : q)
     };
 
     return ApiResponseService.success(res, "Pregunta regenerada exitosamente", updatedQuiz);
