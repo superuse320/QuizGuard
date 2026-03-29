@@ -15,7 +15,7 @@ const cleanJSON = (text) => {
     const match = raw.match(/\{[\s\S]*\}/);
     return match ? JSON.parse(match[0]) : JSON.parse(raw);
   } catch (e) {
-    throw new SyntaxError("Error al parsear JSON de la IA");
+    throw new SyntaxError("Error al generar preguntas");
   }
 };
 
@@ -24,18 +24,18 @@ async function callAIWithRotation(payload) {
 
   for (const ai of aiInventory) {
     try {
-      console.log(`📡 Intentando con: ${ai.name}...`);
+     // console.log(`📡 Intentando con: ${ai.name}...`);
       
       const rawResponse = await ai.execute(payload);
       return cleanJSON(rawResponse);
 
     } catch (error) {
       lastError = error;
-      console.warn(`${ai.name} falló: ${error.message}. Probando siguiente...`);
+      //console.warn(`${ai.name} falló: ${error.message}. Probando siguiente...`);
     }
   }
   
-  throw new Error(`Saturación total. Último error: ${lastError?.message}`);
+  throw new Error(`Se alcanzo el limite`);
 }
 
 module.exports = { callAIWithRotation };
