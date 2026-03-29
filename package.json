@@ -17,12 +17,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@cerebras/cerebras_cloud_sdk": "^1.64.1",
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.99.3",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "groq-sdk": "^1.1.1",
+    "groq-sdk": "^1.1.2",
+    "openai": "^6.33.0",
     "swagger-autogen": "^2.23.7",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"

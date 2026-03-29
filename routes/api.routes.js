@@ -50,7 +50,7 @@ router.get('/me', auth, asyncHandler(ctrl.get))
  *       401:
  *         description: No autorizado
  */
-router.post('/quiz/generate',auth,  asyncHandler(quizCtrl.generateNewQuiz))   
+router.post('/quiz/generate', asyncHandler(quizCtrl.generateNewQuiz))   
 /**
  * @swagger
  * /api/quiz/evaluate:
@@ -148,7 +148,7 @@ router.post('/quiz/generate',auth,  asyncHandler(quizCtrl.generateNewQuiz))
  *       401:
  *         description: No autorizado
  */
-router.post('/quiz/evaluate',auth,  asyncHandler(quizCtrl.submitQuizForEvaluation));
+router.post('/quiz/evaluate', asyncHandler(quizCtrl.submitQuizForEvaluation));
 /**
  * @swagger
  * /api/quiz/regenerate-question:
@@ -224,5 +224,5 @@ router.post('/quiz/evaluate',auth,  asyncHandler(quizCtrl.submitQuizForEvaluatio
  *       401:
  *         description: No autorizado
  */
-router.post('/quiz/regenerate-question', auth,asyncHandler(quizCtrl.regenerateQuestion));
+router.post('/quiz/regenerate-question', asyncHandler(quizCtrl.regenerateQuestion));
 module.exports = router
