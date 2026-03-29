@@ -7,8 +7,8 @@ const callGroq = async (payload) => {
       ...payload,
       model: "llama-3.3-70b-versatile",
       max_tokens: 8000,
-      temperature: 0.1, 
-      response_format: { type: "json_object" },
+      temperature: 0.7, 
+     
      
       stream: false,
     });

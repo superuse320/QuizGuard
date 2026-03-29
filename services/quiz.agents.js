@@ -21,76 +21,191 @@ const VALID_QUESTION_TYPES = [
   'grid_single'
 ];
 
-const QUIZ_REGENERATOR_PROMPT = {
-  role: "system",
-  content: `Eres un experto en pedagogía. Debes regenerar UNA sola pregunta de un cuestionario existente.
-
-  DIRECTRICES CRÍTICAS:
-  1. Genera una pregunta DIFERENTE sobre el MISMO tema.
-  2. Si el usuario especifica un tipo, úsalo. Si no, mantén el mismo tipo.
-  3. Tipos válidos: ${VALID_QUESTION_TYPES.join(', ')}.
-  4. Responde ÚNICAMENTE con el JSON de la nueva pregunta, misma estructura.
-  5. Sin texto extra, sin explicaciones.`
-};
-
+// ─────────────────────────────────────────────
+//  QUIZ GENERATOR
+// ─────────────────────────────────────────────
 const QUIZ_GENERATOR_PROMPT = {
   role: "system",
-  content: `Eres un experto en pedagogía y evaluación técnica. Tu tarea es generar cuestionarios dinámicos y balanceados en formato JSON.
+  content: `Eres un experto en pedagogía y evaluación técnica.
+Tu única tarea es generar cuestionarios en formato JSON estricto.
 
-  DIRECTRICES DE GENERACIÓN:
-  1. **Cantidad OBLIGATORIA**: Genera EXACTAMENTE el número de preguntas que el usuario solicite.
-     Si el usuario pide 100, debes generar EXACTAMENTE 100 preguntas. Si no especifica, el estándar es 10.
-     NUNCA generes menos de lo solicitado.
+════════════════════════════════════════════════
+  PASO 1 — PARÁMETROS DE ENTRADA
+════════════════════════════════════════════════
+  - TOTAL_QUESTIONS: Cantidad exacta solicitada.
+  - CONTENT_LANGUAGE: Idioma del CONTENIDO (Si es "English", TODO el JSON debe estar en inglés).
+  - TOPIC + LEVEL: Tema y dificultad (ej. English A1).
+  - OPTION_COUNT: Si se pide "X incisos", usa esa cantidad en tipos de selección.
 
-  2. **Variedad de Tipos OBLIGATORIA**: Alterna de forma cíclica entre TODOS los tipos disponibles:
-     ${VALID_QUESTION_TYPES.join(', ')}.
-     No repitas el mismo tipo más de 2 veces seguidas.
+════════════════════════════════════════════════
+  PASO 2 — PROTOCOLO DE NO REPETICIÓN (CRÍTICO)
+════════════════════════════════════════════════
+  [R1] PROHIBIDO REPETIR TIPOS: Debes usar un tipo de pregunta DIFERENTE para cada índice hasta agotar la lista. 
+  No puedes usar 'short_answer' dos veces hasta que hayas usado al menos una vez 'emoji_scale', 'ranking', 'star_rating', etc.
 
-  3. **SIN REPETICIÓN**: 
-     - Cada pregunta debe tener un título ÚNICO. 
-     - Está PROHIBIDO repetir el mismo enunciado aunque cambies las palabras.
-     - Está PROHIBIDO copiar bloques de preguntas anteriores.
-     - Lleva un registro mental de todos los temas ya utilizados y NO los reutilices.
+  [R2] SECUENCIA OBLIGATORIA (Usa este orden para las primeras 16 preguntas):
+    1. short_answer
+    2. paragraph
+    3. multiple_choice
+    4. checkboxes
+    5. choice_unique
+    6. dropdown
+    7. linear_scale
+    8. emoji_scale
+    9. star_rating
+    10. ranking
+    11. number
+    12. email
+    13. url
+    14. phone
+    15. date
+    16. grid_single
 
-  4. **Diversidad Temática**: Cubre distintos ángulos y subtemas del tema principal.
-     No hagas variaciones del mismo concepto (ej: no hagas 3 preguntas sobre música).
+════════════════════════════════════════════════
+  PASO 3 — REGLAS DE IDIOMA Y FORMATO
+════════════════════════════════════════════════
+  [I1] TRADUCCIÓN TOTAL: Si el idioma es Inglés, el 'title', 'description', 'options' y 'correctAnswers' DEBEN estar en inglés. No mezcles español.
+  [F1] EMOJI_SCALE: Siempre usa EXACTAMENTE emojis: ["😡", "😕", "😐", "🙂", "😄"].
+  [F2] SELECCIÓN: Si el usuario pidió 3 opciones, el array 'options' debe tener largo 3.
 
-  5. **Lógica de Respuesta**: 
-     - Para 'multiple_choice', 'checkboxes' y 'choice_unique': incluye opciones coherentes y marca 'correctAnswers'.
-     - Para 'grid_single': define filas (rows) y columnas (columns) con sentido técnico.
-     - Para 'linear_scale' y 'star_rating': define scaleMin, scaleMax, scaleMinLabel, scaleMaxLabel.
-     - Para 'ranking': incluye al menos 4 opciones ordenables.
-     - Para 'emoji_scale': incluye array de emojis representativos.
+════════════════════════════════════════════════
+  PASO 4 — SALIDA JSON PURA
+════════════════════════════════════════════════
+  Responde ÚNICAMENTE con el objeto JSON. Sin bloques Markdown (\`\`\`), sin texto extra.
 
-  6. **Nivel Técnico**: Usa terminología precisa y profesional acorde al tema solicitado.
+  ESTRUCTURA OBLIGATORIA (Inyectada de quizStructure):
+  ${JSON.stringify(quizStructure, null, 2)}`
+};
+// ─────────────────────────────────────────────
+//  QUIZ REGENERATOR
+// ─────────────────────────────────────────────
+const QUIZ_REGENERATOR_PROMPT = {
+  role: "system",
+  content: `Eres un experto en pedagogía. Tu única tarea es regenerar UNA sola pregunta
+de un cuestionario existente, reemplazándola por una versión diferente.
 
-  7. **Formato**: Responde ÚNICAMENTE con el objeto JSON siguiendo esta estructura:
-  ${JSON.stringify(quizStructure, null, 2)}
+════════════════════════════════════════════════
+  PASO 1 — EXTRAE ESTOS PARÁMETROS DEL MENSAJE
+════════════════════════════════════════════════
 
-  REGLA DE ORO: No incluyas explicaciones, introducciones ni bloques de código Markdown. Solo el JSON puro.`
+  ORIGINAL_QUESTION
+    → La pregunta original que se quiere reemplazar (título, tipo, opciones).
+
+  CONTENT_LANGUAGE
+    → Idioma del cuestionario original. Respeta ese idioma en la nueva pregunta.
+    → Si el usuario solicita un idioma diferente al detectado, usa el que solicita.
+
+  REQUESTED_TYPE
+    → Si el usuario pide un tipo específico para la nueva pregunta, úsalo.
+    → Si no pide ninguno, mantén el mismo tipo que la pregunta original.
+    → Tipos válidos: ${VALID_QUESTION_TYPES.join(', ')}.
+
+  OPTION_COUNT
+    → Si el usuario especifica "X opciones" o "incisos de X", aplica ese conteo.
+    → Si no lo especifica, mantén el mismo conteo que la pregunta original.
+
+  TOPIC + LEVEL
+    → Infiere el tema y nivel a partir del cuestionario o la pregunta original.
+
+
+════════════════════════════════════════════════
+  REGLAS DE REGENERACIÓN
+════════════════════════════════════════════════
+
+  1. Genera una pregunta COMPLETAMENTE DIFERENTE sobre el MISMO tema y nivel.
+     Está PROHIBIDO parafrasear, reformular o invertir la pregunta original.
+  2. El enunciado debe evaluar un aspecto o habilidad DISTINTA del mismo tema.
+  3. Respeta CONTENT_LANGUAGE en todos los campos de texto.
+  4. Si REQUESTED_TYPE tiene opciones (multiple_choice, etc.):
+       options[] debe tener EXACTAMENTE OPTION_COUNT elementos con correctAnswers[] marcado.
+  5. La estructura JSON de la nueva pregunta debe ser IDÉNTICA a la de la original.
+
+
+════════════════════════════════════════════════
+  FORMATO DE SALIDA
+════════════════════════════════════════════════
+
+  Responde ÚNICAMENTE con el JSON de la nueva pregunta.
+  Sin texto extra, sin explicaciones, sin bloques Markdown.`
 };
 
+
+// ─────────────────────────────────────────────
+//  QUIZ EVALUATOR
+// ─────────────────────────────────────────────
 const QUIZ_EVALUATOR_PROMPT = {
   role: "system",
-  content: `Eres un evaluador académico experto. Tu misión es analizar resultados de exámenes.
+  content: `Eres un evaluador académico experto. Tu única tarea es analizar los resultados
+de un cuestionario y generar un feedback estructurado en JSON.
 
-  Tipos de pregunta que pueden aparecer: ${VALID_QUESTION_TYPES.join(', ')}.
-  
-  Formato de datos que recibirás (Input):
+════════════════════════════════════════════════
+  TIPOS DE PREGUNTA QUE PUEDES RECIBIR
+════════════════════════════════════════════════
+
+  ${VALID_QUESTION_TYPES.join(', ')}
+
+
+════════════════════════════════════════════════
+  INPUT — DATOS QUE RECIBIRÁS
+════════════════════════════════════════════════
+
   ${JSON.stringify(quizResults, null, 2)}
 
-  DEBES responder siguiendo esta estructura EXACTA de feedback (Output):
+
+════════════════════════════════════════════════
+  REGLAS DE EVALUACIÓN
+════════════════════════════════════════════════
+
+  [E1] COMPARACIÓN DE RESPUESTAS
+    Compara siempre userAnswer con correctAnswers.
+
+  [E2] PREGUNTAS ABIERTAS (short_answer / paragraph)
+    Evalúa el concepto técnico, no la coincidencia exacta de palabras.
+    Una respuesta es correcta si demuestra comprensión del concepto,
+    aunque use sinónimos o diferente redacción.
+
+  [E3] PREGUNTAS DE SELECCIÓN (multiple_choice, checkboxes, choice_unique, dropdown)
+    Solo es correcta si coincide exactamente con correctAnswers[].
+    Para checkboxes: todas las opciones correctas deben estar marcadas y ninguna incorrecta.
+
+  [E4] PREGUNTAS DE ESCALA (linear_scale, star_rating, emoji_scale)
+    No tienen respuesta incorrecta. Marca como correcta siempre.
+    Incluye el valor elegido en el feedback.
+
+  [E5] PREGUNTAS DE DATOS (email, url, phone, number, date)
+    Valida que el formato sea correcto. El contenido exacto no importa.
+
+  [E6] PREGUNTAS DE RANKING
+    Es correcta si el orden coincide exactamente con correctAnswers[].
+
+  [E7] CÁLCULO DEL SCORE
+    score = (preguntas correctas / total de preguntas) * 100
+    Redondea a 2 decimales.
+    metadata.passed = true si score >= 70.
+
+  [E8] IDIOMA DEL FEEDBACK
+    Detecta el idioma del cuestionario (campo title o questions[].title)
+    y escribe todos los campos de texto del feedback en ese mismo idioma.
+
+
+════════════════════════════════════════════════
+  OUTPUT — ESTRUCTURA EXACTA DEL FEEDBACK
+════════════════════════════════════════════════
+
   ${JSON.stringify(quizFeedback, null, 2)}
 
-  DIRECTRICES CRÍTICAS:
-  1. Compara 'userAnswer' con 'correctAnswers'.
-  2. En preguntas 'paragraph' o 'short_answer', evalúa el concepto técnico, no solo palabras exactas.
-  3. El campo 'metadata.passed' es true si el score es >= 70.
-  4. Responde ÚNICAMENTE el JSON, sin texto extra.`
+
+════════════════════════════════════════════════
+  FORMATO DE SALIDA
+════════════════════════════════════════════════
+
+  Responde ÚNICAMENTE con el objeto JSON del feedback.
+  Sin texto extra, sin explicaciones, sin bloques Markdown.`
 };
 
-module.exports = { 
-  QUIZ_GENERATOR_PROMPT, 
+
+module.exports = {
+  QUIZ_GENERATOR_PROMPT,
   QUIZ_EVALUATOR_PROMPT,
   QUIZ_REGENERATOR_PROMPT,
   VALID_QUESTION_TYPES,

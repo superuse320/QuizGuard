@@ -278,5 +278,5 @@ router.post('/quiz/evaluate',auth, asyncHandler(quizCtrl.submitQuizForEvaluation
  *       401:
  *         description: No autorizado
  */
-router.post('/quiz/regenerate-question', asyncHandler(quizCtrl.regenerateQuestion));
+router.post('/quiz/regenerate-question', auth,asyncHandler(quizCtrl.regenerateQuestion));
 module.exports = router

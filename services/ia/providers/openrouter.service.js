@@ -7,7 +7,7 @@ const callOpenRouter = async (payload) => {
       ...payload,
       model: "meta-llama/llama-3.3-70b-instruct",
       stream: false,
-      response_format: { type: "json_object" },
+     
     });
   //  console.log("[OpenRouter] Respuesta recibida con éxito.");
    

@@ -6,9 +6,9 @@ const callCerebras = async (payload) => {
       ...payload,
       model: "llama3.1-8b", 
       stream: false,
-      temperature: 0.1, 
+      temperature: 0.7, 
       max_completion_tokens: 8000,  
-      response_format: { type: "json_object" },
+      
     });
     if (completion && completion.choices && completion.choices[0]) {
    //   console.log("[Cerebras] Respuesta recibida con éxito.");
