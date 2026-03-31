@@ -9,6 +9,22 @@ const aiInventory = [
   
 ];
 
+const IA_TIMEOUT_MS = Number(process.env.IA_TIMEOUT_MS || 25000);
+const IA_TIMEOUT_RETRIES = 2;
+
+const withTimeout = (promise, timeoutMs, providerName) => {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`[timeout] ${providerName} excedió ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+};
+
+const isTimeoutError = (error) => typeof error?.message === 'string' && error.message.includes('[timeout]');
+
 const cleanJSON = (text) => {
   try {
     const raw = text.replace(/```json|```/g, "").trim();
@@ -24,17 +40,23 @@ async function callAIWithRotation(payload, options = {}) {
   let lastError = null;
 
   for (const ai of aiInventory) {
-    try {
-     // console.log(`📡 Intentando con: ${ai.name}...`);
-      
-      const rawResponse = await ai.execute(payload);
-      const parsed = cleanJSON(rawResponse);
-      const validated = typeof validate === 'function' ? validate(parsed) : parsed;
-      return validated;
+    for (let attempt = 0; attempt <= IA_TIMEOUT_RETRIES; attempt++) {
+      try {
+       // console.log(`📡 Intentando con: ${ai.name}...`);
+        
+        const rawResponse = await withTimeout(ai.execute(payload), IA_TIMEOUT_MS, ai.name);
+        const parsed = cleanJSON(rawResponse);
+        const validated = typeof validate === 'function' ? validate(parsed) : parsed;
+        return validated;
 
-    } catch (error) {
-      lastError = new Error(`${ai.name}: ${error.message}`);
-      //console.warn(`${ai.name} falló: ${error.message}. Probando siguiente...`);
+      } catch (error) {
+        lastError = new Error(`${ai.name}: ${error.message}`);
+        const shouldRetryTimeout = isTimeoutError(error) && attempt < IA_TIMEOUT_RETRIES;
+        if (shouldRetryTimeout) {
+          continue;
+        }
+        break;
+      }
     }
   }
   
