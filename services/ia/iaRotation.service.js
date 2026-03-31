@@ -19,7 +19,8 @@ const cleanJSON = (text) => {
   }
 };
 
-async function callAIWithRotation(payload) {
+async function callAIWithRotation(payload, options = {}) {
+  const { validate } = options;
   let lastError = null;
 
   for (const ai of aiInventory) {
@@ -27,15 +28,17 @@ async function callAIWithRotation(payload) {
      // console.log(`📡 Intentando con: ${ai.name}...`);
       
       const rawResponse = await ai.execute(payload);
-      return cleanJSON(rawResponse);
+      const parsed = cleanJSON(rawResponse);
+      const validated = typeof validate === 'function' ? validate(parsed) : parsed;
+      return validated;
 
     } catch (error) {
-      lastError = error;
+      lastError = new Error(`${ai.name}: ${error.message}`);
       //console.warn(`${ai.name} falló: ${error.message}. Probando siguiente...`);
     }
   }
   
-  throw new Error(`Se alcanzo el limite`);
+  throw new Error(`Se alcanzo el limite. ${lastError ? `Ultimo error: ${lastError.message}` : ''}`.trim());
 }
 
 module.exports = { callAIWithRotation };
