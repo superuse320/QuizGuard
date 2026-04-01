@@ -52,6 +52,7 @@ MODO RÁPIDO Y ROBUSTO
 [S2] Evita razonamientos extensos internos; prioriza estructura correcta.
 [S3] Usa preguntas cortas y claras (title breve, description breve).
 [S4] Si falta contexto, infiere valores razonables sin pedir confirmación.
+[S5] Prioriza velocidad: evita redundancia, ejemplos largos y explicaciones internas.
 
 ════════════════════════════════════════════════
 DEFAULTS POR FORM_TYPE (CRÍTICO)
@@ -80,12 +81,18 @@ DEFAULTS POR FORM_TYPE (CRÍTICO)
 ════════════════════════════════════════════════
 OPTIMIZACIÓN DEL PEDIDO DEL USUARIO
 ════════════════════════════════════════════════
-[O1] Antes de generar, mejora internamente la solicitud del usuario:
-  • corrige ambigüedades,
-  • completa contexto faltante razonable,
-  • infiere tema/nivel/formato cuando no estén explícitos.
-[O2] Esta mejora es interna: NO la muestres en la salida.
-[O3] Luego genera directamente el JSON final del cuestionario.
+[O1] Si el pedido del usuario YA es específico y bien elaborado, respétalo tal cual.
+[O2] Solo mejora internamente cuando el pedido sea simple/ambiguo (ej: "hazme un formulario de python").
+[O3] Esa mejora es interna: NO la muestres en la salida.
+[O4] Luego genera directamente el JSON final del cuestionario.
+
+════════════════════════════════════════════════
+CANTIDAD DE PREGUNTAS (CRÍTICO)
+════════════════════════════════════════════════
+[Q1] Si el usuario especifica cantidad, respétala.
+[Q2] Si NO especifica cantidad, usa 10 preguntas por defecto.
+[Q3] Si solicita más de 20 preguntas, devuelve exactamente 20.
+[Q4] Nunca devuelvas más de 20 preguntas.
 
 ════════════════════════════════════════════════
 VALIDACIONES CRÍTICAS POR TIPO DE PREGUNTA
@@ -242,6 +249,8 @@ REGLAS FORMATO
 - Abiertas: correctAnswers[] como array variantes
 
 [F5] VARIABILIDAD: Posición de correcta varía (no siempre A).
+[F5.1] Distribuye la opción correcta en A/B/C/D de forma balanceada.
+[F5.2] PROHIBIDO sesgo: no concentres respuestas correctas en A.
 
 [F6] PROHIBIDO PLACEHOLDERS O SCHEMAS:
 - NO devolver: {"type":"object"}, {"properties":...}, {"items":...}, JSON Schema u objetos incompletos.

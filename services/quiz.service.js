@@ -265,12 +265,13 @@ const validateQuizPayload = (payload) => {
   }
 
   const normalizedQuestions = payload.questions.map((question, index) => normalizeAndValidateQuestion(question, index));
+  const cappedQuestions = normalizedQuestions.slice(0, 20);
   return {
     ...payload,
     version: isNonEmptyString(payload.version) ? payload.version.trim() : '1.0',
     title: isNonEmptyString(payload.title) ? payload.title.trim() : 'Cuestionario generado',
     description: typeof payload.description === 'string' ? payload.description.trim() : '',
-    questions: normalizedQuestions
+    questions: cappedQuestions
   };
 };
 
@@ -289,12 +290,42 @@ const validateFeedbackPayload = (payload) => {
 
 const validateSingleQuestionPayload = (payload) => normalizeAndValidateQuestion(payload, 0);
 
+const isDetailedUserPrompt = (text) => {
+  if (!isNonEmptyString(text)) return false;
+  const detailedHints = [
+    /\b\d+\s*preguntas?\b/i,
+    /opci[oó]n/i,
+    /selecci[oó]n\s*[uú]nica/i,
+    /nivel/i,
+    /tema|incluye|evita/i,
+    /clara|precisa|ambig/i
+  ];
+  return detailedHints.filter((rx) => rx.test(text)).length >= 2;
+};
+
+const buildGeneratorUserPrompt = (topic) => {
+  const raw = isNonEmptyString(topic) ? topic.trim() : 'Haz un formulario de conocimiento general';
+  if (isDetailedUserPrompt(raw)) {
+    return raw;
+  }
+
+  return `${raw}
+
+Si no se especifica otra cosa:
+- Genera 10 preguntas
+- Tipo de formulario por defecto: examen
+- Tipo de pregunta por defecto: choice_unique (selección única)
+- Si el usuario pide encuesta/forms, usa checkboxes por defecto
+- Máximo permitido: 20 preguntas`;
+};
+
 const generateQuiz = async (topic) => {
   try {
+    const userPrompt = buildGeneratorUserPrompt(topic);
     const result = await callAIWithRotation({
       messages: [
         QUIZ_GENERATOR_PROMPT,
-        { role: "user", content: `Genera un cuestionario avanzado sobre: ${topic}` }
+        { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
       temperature: 0.2
